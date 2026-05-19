@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local configuration
+local.properties
+
+# IntelliJ
+*.iml
+.idea/
+*.iws
+out/
+
+# Android Studio
+.gradle/
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+
+# Kotlin
+*.kotlin_module
+
+# Misc
+.DS_Store
+*.log
+
+# Firebase
+google-services.json
