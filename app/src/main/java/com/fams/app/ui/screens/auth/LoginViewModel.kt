@@ -15,7 +15,11 @@ data class LoginUiState(
     val password: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val loginSuccess: UserRole? = null
+    val loginSuccess: UserRole? = null,
+    val showResetDialog: Boolean = false,
+    val resetEmail: String = "",
+    val resetMessage: String? = null,
+    val isResetLoading: Boolean = false
 )
 
 class LoginViewModel(
@@ -57,6 +61,49 @@ class LoginViewModel(
                 }
             )
         }
+    }
+
+    fun sendPasswordResetEmail() {
+        val state = _uiState.value
+        if (state.resetEmail.isBlank()) {
+            _uiState.value = state.copy(resetMessage = "Enter your email address.")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = state.copy(isResetLoading = true, resetMessage = null)
+            authRepository.sendPasswordResetEmail(state.resetEmail.trim()).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isResetLoading = false,
+                        resetMessage = "Reset link sent. Check your email.",
+                        resetEmail = state.resetEmail.trim()
+                    )
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isResetLoading = false,
+                        resetMessage = error.message
+                    )
+                }
+            )
+        }
+    }
+
+    fun onForgotPasswordClick() {
+        _uiState.value = _uiState.value.copy(
+            showResetDialog = true,
+            resetEmail = _uiState.value.email,
+            resetMessage = null
+        )
+    }
+
+    fun onResetEmailChange(value: String) {
+        _uiState.value = _uiState.value.copy(resetEmail = value, resetMessage = null)
+    }
+
+    fun closeResetDialog() {
+        _uiState.value = _uiState.value.copy(showResetDialog = false, resetMessage = null)
     }
 
     fun clearLoginSuccess() {

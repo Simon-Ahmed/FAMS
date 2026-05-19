@@ -212,6 +212,11 @@ fun LoginScreen(
                         }
                     }
 
+                    TextButton(onClick = viewModel::onForgotPasswordClick,
+                        modifier = Modifier.fillMaxWidth()) {
+                        Text("Forgot password?", style = MaterialTheme.typography.bodyMedium)
+                    }
+
                     Text(
                         text = "Contact your coordinator if you don't have an account.",
                         style = MaterialTheme.typography.bodyMedium,
@@ -224,5 +229,56 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
         }
+    }
+
+    if (uiState.showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.closeResetDialog() },
+            title = { Text("Reset Password") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Enter your account email to receive a password reset link.")
+                    OutlinedTextField(
+                        value = uiState.resetEmail,
+                        onValueChange = viewModel::onResetEmailChange,
+                        label = { Text("Email") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (uiState.resetMessage != null) {
+                        Text(
+                            text = uiState.resetMessage!!,
+                            color = if (uiState.resetMessage!!.contains("sent", true))
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = viewModel::sendPasswordResetEmail,
+                    enabled = !uiState.isResetLoading
+                ) {
+                    if (uiState.isResetLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Send reset email")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.closeResetDialog() }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
