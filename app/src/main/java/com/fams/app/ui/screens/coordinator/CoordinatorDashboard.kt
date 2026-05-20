@@ -14,11 +14,12 @@ sealed class CoordinatorTab(
     val label: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
-    object Home     : CoordinatorTab("Home",     Icons.Default.Dashboard)
-    object Students : CoordinatorTab("Students", Icons.Default.People)
-    object Teachers : CoordinatorTab("Teachers", Icons.Default.School)
-    object Sections : CoordinatorTab("Sections", Icons.Default.GridView)
-    object Schedule : CoordinatorTab("Schedule", Icons.Default.CalendarMonth)
+    object Home       : CoordinatorTab("Home",       Icons.Default.Dashboard)
+    object Students   : CoordinatorTab("Students",   Icons.Default.People)
+    object Teachers   : CoordinatorTab("Teachers",   Icons.Default.School)
+    object Sections   : CoordinatorTab("Sections",   Icons.Default.GridView)
+    object Attendance : CoordinatorTab("Attendance", Icons.Default.HowToReg)
+    object Schedule   : CoordinatorTab("Schedule",   Icons.Default.CalendarMonth)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,6 +82,7 @@ fun CoordinatorDashboard(
         CoordinatorTab.Students,
         CoordinatorTab.Teachers,
         CoordinatorTab.Sections,
+        CoordinatorTab.Attendance,
         CoordinatorTab.Schedule
     )
 
@@ -123,11 +125,12 @@ fun CoordinatorDashboard(
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
-                CoordinatorTab.Home     -> CoordinatorHomeTab(uiState)
-                CoordinatorTab.Students -> StudentsTab(uiState, viewModel, coordinatorEmail)
-                CoordinatorTab.Teachers -> TeachersTab(uiState, viewModel, coordinatorEmail)
-                CoordinatorTab.Sections -> SectionsTab(uiState, viewModel)
-                CoordinatorTab.Schedule -> ScheduleScreen()
+                CoordinatorTab.Home       -> CoordinatorHomeTab(uiState)
+                CoordinatorTab.Students   -> StudentsTab(uiState, viewModel, coordinatorEmail)
+                CoordinatorTab.Teachers   -> TeachersTab(uiState, viewModel, coordinatorEmail)
+                CoordinatorTab.Sections   -> SectionsTab(uiState, viewModel)
+                CoordinatorTab.Attendance -> CoordinatorAttendanceTab(uiState, viewModel)
+                CoordinatorTab.Schedule   -> ScheduleScreen()
             }
         }
     }

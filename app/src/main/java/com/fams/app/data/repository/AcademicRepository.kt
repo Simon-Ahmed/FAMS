@@ -119,6 +119,30 @@ class AcademicRepository(
         } catch (e: Exception) { Result.failure(e) }
     }
 
+    suspend fun getAttendanceForSection(sectionId: String, date: String? = null): Result<List<AttendanceRecord>> {
+        return try {
+            // Explicitly type it as Query
+            var query: com.google.firebase.firestore.Query = db.collection("attendance")
+            if (sectionId != "All") query = query.whereEqualTo("sectionId", sectionId)
+            if (!date.isNullOrBlank()) query = query.whereEqualTo("date", date)
+            val snap = query.get().await()
+            Result.success(snap.documents.map { doc ->
+                AttendanceRecord(
+                    id = doc.id,
+                    studentId = doc.getString("studentId") ?: "",
+                    studentName = doc.getString("studentName") ?: "",
+                    teacherId = doc.getString("teacherId") ?: "",
+                    sectionId = doc.getString("sectionId") ?: "",
+                    subjectId = doc.getString("subjectId") ?: "",
+                    subjectName = doc.getString("subjectName") ?: "",
+                    date = doc.getString("date") ?: "",
+                    status = AttendanceStatus.from(doc.getString("status") ?: ""),
+                    sessionId = doc.getString("sessionId") ?: ""
+                )
+            })
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
     suspend fun submitTeacherAttendance(record: TeacherAttendanceRecord): Result<Unit> {
         return try {
             db.collection("teacherAttendance").add(mapOf(
@@ -128,6 +152,28 @@ class AcademicRepository(
                 "status" to record.status.value, "markedByRepId" to record.markedByRepId
             )).await()
             Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    suspend fun getTeacherAttendanceForSection(sectionId: String, date: String? = null): Result<List<TeacherAttendanceRecord>> {
+        return try {
+            var query: com.google.firebase.firestore.Query = db.collection("teacherAttendance")
+            if (sectionId != "All") query = query.whereEqualTo("sectionId", sectionId)
+            if (!date.isNullOrBlank()) query = query.whereEqualTo("date", date)
+            val snap = query.get().await()
+            Result.success(snap.documents.map { doc ->
+                TeacherAttendanceRecord(
+                    id = doc.id,
+                    teacherId = doc.getString("teacherId") ?: "",
+                    teacherName = doc.getString("teacherName") ?: "",
+                    sectionId = doc.getString("sectionId") ?: "",
+                    subjectId = doc.getString("subjectId") ?: "",
+                    subjectName = doc.getString("subjectName") ?: "",
+                    date = doc.getString("date") ?: "",
+                    status = AttendanceStatus.from(doc.getString("status") ?: ""),
+                    markedByRepId = doc.getString("markedByRepId") ?: ""
+                )
+            })
         } catch (e: Exception) { Result.failure(e) }
     }
 

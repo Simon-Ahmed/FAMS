@@ -6,12 +6,15 @@ import androidx.compose.ui.geometry.isEmpty
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.fams.app.data.repository.AcademicRepository
 import com.fams.app.data.repository.BulkImportRepository
 import com.fams.app.data.repository.ScheduleDataRepository
 import com.fams.app.data.repository.SectionRepository
 import com.fams.app.data.repository.UserRepository
+import com.fams.app.domain.model.AttendanceRecord
 import com.fams.app.domain.model.Section
 import com.fams.app.domain.model.Subject
+import com.fams.app.domain.model.TeacherAttendanceRecord
 import com.fams.app.domain.model.TeacherSubject
 import com.fams.app.domain.model.User
 import com.fams.app.domain.model.UserRole
@@ -28,8 +31,14 @@ data class CoordinatorUiState(
     val sections: List<Section> = emptyList(),
     val subjects: List<Subject> = emptyList(),
     val teacherSubjects: List<TeacherSubject> = emptyList(),
+    val attendanceRecords: List<AttendanceRecord> = emptyList(),
+    val teacherAttendanceRecords: List<TeacherAttendanceRecord> = emptyList(),
+    val attendanceSectionId: String = "All",
+    val attendanceDate: String = "",
     val isLoading: Boolean = false,
+    val attendanceLoading: Boolean = false,
     val errorMessage: String? = null,
+    val attendanceError: String? = null,
     val successMessage: String? = null,
     val generatedCredential: Pair<String, String>? = null,
     val importFailedRows: List<String> = emptyList(),
@@ -46,10 +55,11 @@ class CoordinatorViewModel(
     private val userRepository: UserRepository = UserRepository(),
     private val sectionRepository: SectionRepository = SectionRepository(),
     private val scheduleRepository: ScheduleDataRepository = ScheduleDataRepository(),
+    private val academicRepository: AcademicRepository = AcademicRepository(),
     private val bulkImportRepository: BulkImportRepository = BulkImportRepository()
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CoordinatorUiState())
+    private val _uiState = MutableStateFlow(CoordinatorUiState(attendanceDate = todayDate()))
     val uiState: StateFlow<CoordinatorUiState> = _uiState.asStateFlow()
 
     init { loadAll() }
@@ -101,6 +111,44 @@ class CoordinatorViewModel(
                 attendanceRate = attendanceRate,
                 maxStudentsPerSection = maxStudentsPerSection,
                 isLoading = false
+            )
+            loadAttendanceSummary()
+        }
+    }
+
+    private fun todayDate(): String = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+
+    fun updateAttendanceSection(sectionId: String) {
+        _uiState.value = _uiState.value.copy(attendanceSectionId = sectionId)
+        loadAttendanceSummary()
+    }
+
+    fun updateAttendanceDate(date: String) {
+        _uiState.value = _uiState.value.copy(attendanceDate = date)
+        loadAttendanceSummary()
+    }
+
+    fun loadAttendanceSummary() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(attendanceLoading = true, attendanceError = null)
+            val state = _uiState.value
+            val dateFilter = state.attendanceDate.takeIf { it.isNotBlank() }
+            var failureMessage: String? = null
+            val studentAttendance = academicRepository.getAttendanceForSection(state.attendanceSectionId, dateFilter)
+                .getOrElse {
+                    failureMessage = it.message
+                    emptyList()
+                }
+            val teacherAttendance = academicRepository.getTeacherAttendanceForSection(state.attendanceSectionId, dateFilter)
+                .getOrElse {
+                    failureMessage = failureMessage ?: it.message
+                    emptyList()
+                }
+            _uiState.value = _uiState.value.copy(
+                attendanceRecords = studentAttendance,
+                teacherAttendanceRecords = teacherAttendance,
+                attendanceLoading = false,
+                attendanceError = failureMessage
             )
         }
     }

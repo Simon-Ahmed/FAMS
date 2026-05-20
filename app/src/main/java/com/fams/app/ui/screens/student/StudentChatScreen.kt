@@ -12,12 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-// Keep only one of each:
+
 import com.fams.app.domain.model.ChatMessage
 import com.fams.app.domain.model.ChatThread
 
 @OptIn(ExperimentalMaterial3Api::class)
-// ... rest of the codeOnce you remove those two extra lines and save the file, the build error will disappear.
 @Composable
 fun StudentChatScreen(state: StudentUiState, viewModel: StudentViewModel) {
     var selectedThread by remember { mutableStateOf<ChatThread?>(null) }
