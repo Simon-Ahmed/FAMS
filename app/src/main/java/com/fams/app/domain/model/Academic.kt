@@ -224,3 +224,28 @@ data class ChatThread(
     val lastMessageAt: Long = 0L,
     val unreadCount: Int = 0
 )
+
+// ── Notes / To‑Do / University Info ─────────────────────────────────────────
+
+data class Note(
+    val id: String = "",
+    val userId: String = "",
+    val title: String = "",
+    val body: String = "",
+    val createdAt: Long = 0L
+)
+
+data class TodoItem(
+    val id: String = "",
+    val userId: String = "",
+    val title: String = "",
+    val done: Boolean = false,
+    val timestamp: Long = 0L
+)
+
+data class UniversityInfo(
+    val id: String = "",
+    val title: String = "",
+    val body: String = "",
+    val updatedAt: Long = 0L
+)

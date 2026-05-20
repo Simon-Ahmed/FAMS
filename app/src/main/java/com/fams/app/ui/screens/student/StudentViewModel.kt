@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.fams.app.data.repository.AcademicRepository
+import com.fams.app.data.repository.NotesRepository
+import com.fams.app.data.repository.TodoRepository
+import com.fams.app.data.repository.UniversityInfoRepository
 import com.fams.app.data.repository.AuthRepository
 import com.fams.app.domain.model.*
 import com.fams.app.domain.model.ChatMessage
@@ -30,6 +33,9 @@ data class StudentUiState(
     val notifications: List<AppNotification> = emptyList(),
     val chatThreads: List<ChatThread> = emptyList(),
     val messages: List<ChatMessage> = emptyList(),
+    val notes: List<com.fams.app.domain.model.Note> = emptyList(),
+    val todos: List<com.fams.app.domain.model.TodoItem> = emptyList(),
+    val uniInfo: List<com.fams.app.domain.model.UniversityInfo> = emptyList(),
     val activeQuiz: Quiz? = null,
     val quizSessions: List<QuizSession> = emptyList(),
     val isLoading: Boolean = false,
@@ -41,6 +47,10 @@ class StudentViewModel(
     private val repo: AcademicRepository = AcademicRepository(),
     private val authRepo: AuthRepository = AuthRepository()
 ) : ViewModel() {
+
+    private val notesRepo = NotesRepository()
+    private val todoRepo = TodoRepository()
+    private val uniRepo = UniversityInfoRepository()
 
     private val _state = MutableStateFlow(StudentUiState())
     val state: StateFlow<StudentUiState> = _state.asStateFlow()
@@ -72,6 +82,9 @@ class StudentViewModel(
             val notifications = repo.getNotifications(user.uid).getOrElse { emptyList() }
             val quizzes = repo.getQuizzesForSection(user.sectionId).getOrElse { emptyList() }
             val chatThreads = repo.getChatThreads(user.uid).getOrElse { emptyList() }
+            val notes = notesRepo.getNotes(user.uid).getOrElse { emptyList() }
+            val todos = todoRepo.getTodos(user.uid).getOrElse { emptyList() }
+            val uniInfo = uniRepo.getInfo().getOrElse { emptyList() }
 
             // Load my submissions for each assignment
             val submissionsMap = mutableMapOf<String, Submission>()
@@ -96,7 +109,63 @@ class StudentViewModel(
                 attendanceRecords = attendance, complaints = complaints,
                 announcements = announcements, notifications = notifications,
                 quizzes = quizzes, quizSessions = quizSessions,
-                chatThreads = chatThreads, isLoading = false
+                chatThreads = chatThreads, notes = notes, todos = todos, uniInfo = uniInfo, isLoading = false
+            )
+        }
+    }
+
+    fun addNote(title: String, body: String) {
+        viewModelScope.launch {
+            val user = _state.value.currentUser ?: return@launch
+            val note = com.fams.app.domain.model.Note(userId = user.uid, title = title, body = body, createdAt = System.currentTimeMillis())
+            notesRepo.addNote(note).fold(
+                onSuccess = { loadNotes(user.uid) },
+                onFailure = { _state.value = _state.value.copy(errorMessage = it.message) }
+            )
+        }
+    }
+
+    private fun loadNotes(userId: String) {
+        viewModelScope.launch {
+            val notes = notesRepo.getNotes(userId).getOrElse { emptyList() }
+            _state.value = _state.value.copy(notes = notes)
+        }
+    }
+
+    fun addTodo(title: String) {
+        viewModelScope.launch {
+            val user = _state.value.currentUser ?: return@launch
+            val todo = com.fams.app.domain.model.TodoItem(userId = user.uid, title = title, timestamp = System.currentTimeMillis())
+            todoRepo.addTodo(todo).fold(
+                onSuccess = { loadTodos(user.uid) },
+                onFailure = { _state.value = _state.value.copy(errorMessage = it.message) }
+            )
+        }
+    }
+
+    private fun loadTodos(userId: String) {
+        viewModelScope.launch {
+            val todos = todoRepo.getTodos(userId).getOrElse { emptyList() }
+            _state.value = _state.value.copy(todos = todos)
+        }
+    }
+
+    fun toggleTodo(id: String, done: Boolean) {
+        viewModelScope.launch {
+            val user = _state.value.currentUser ?: return@launch
+            todoRepo.toggleDone(id, done).fold(
+                onSuccess = { loadTodos(user.uid) },
+                onFailure = { _state.value = _state.value.copy(errorMessage = it.message) }
+            )
+        }
+    }
+
+    fun deleteTodo(id: String) {
+        viewModelScope.launch {
+            val user = _state.value.currentUser ?: return@launch
+            todoRepo.deleteTodo(id).fold(
+                onSuccess = { loadTodos(user.uid) },
+                onFailure = { _state.value = _state.value.copy(errorMessage = it.message) }
             )
         }
     }

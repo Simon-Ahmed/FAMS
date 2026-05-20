@@ -5,6 +5,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -40,9 +42,29 @@ fun StudentDashboard(
         "Profile" to Icons.Default.Person
     )
 
-    Scaffold(
+    val drawerState = remember { ModalDrawerState(DrawerValue.Closed) }
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                NavigationDrawerItem(label = { Text("Home") }, selected = selectedTab == 0, onClick = { scope.launch { drawerState.close() }; selectedTab = 0 })
+                NavigationDrawerItem(label = { Text("Notes") }, selected = selectedTab == 6, onClick = { scope.launch { drawerState.close() }; selectedTab = 6 })
+                NavigationDrawerItem(label = { Text("To‑Do") }, selected = selectedTab == 8, onClick = { scope.launch { drawerState.close() }; selectedTab = 8 })
+                NavigationDrawerItem(label = { Text("University Info") }, selected = selectedTab == 7, onClick = { scope.launch { drawerState.close() }; selectedTab = 7 })
+                Divider()
+                NavigationDrawerItem(label = { Text("Profile") }, selected = selectedTab == 5, onClick = { scope.launch { drawerState.close() }; selectedTab = 5 })
+                NavigationDrawerItem(label = { Text("Sign out") }, selected = false, onClick = { scope.launch { drawerState.close() }; onSignOut() })
+            }
+        }
+    ) {
+        Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = { scope.launch { drawerState.open() } }) { Icon(Icons.Default.Menu, null) }
+                },
                 title = { Text(tabs[selectedTab].first) },
                 actions = {
                     IconButton(onClick = onThemeToggle) {
@@ -85,6 +107,9 @@ fun StudentDashboard(
                 3 -> StudentNotificationsScreen(state, viewModel)
                 4 -> StudentChatScreen(state, viewModel)
                 5 -> StudentProfileScreen(state, onSignOut, onThemeToggle, isDarkTheme)
+                6 -> NotesScreen(state, viewModel)
+                7 -> UniversityInfoScreen(state, viewModel)
+                8 -> TodoScreen(state, viewModel)
             }
         }
     }
