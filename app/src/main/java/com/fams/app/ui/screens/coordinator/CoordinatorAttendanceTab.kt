@@ -1,4 +1,4 @@
-[5/19/2026 9:33 PM] Simon: package com.fams.app.ui.screens.coordinator
+package com.fams.app.ui.screens.coordinator
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -80,7 +80,7 @@ fun CoordinatorAttendanceTab(uiState: CoordinatorUiState, viewModel: Coordinator
                             }
                         }
                     }
-[5/19/2026 9:33 PM] Simon: OutlinedTextField(
+ OutlinedTextField(
                         value = uiState.attendanceDate,
                         onValueChange = viewModel::updateAttendanceDate,
                         label = { Text("Date") },
@@ -164,7 +164,7 @@ fun CoordinatorAttendanceTab(uiState: CoordinatorUiState, viewModel: Coordinator
                 AttendanceRecordRow(record)
             }
         }
-[5/19/2026 9:33 PM] Simon: Spacer(modifier = Modifier.height(8.dp))
+ Spacer(modifier = Modifier.height(8.dp))
         Text("Teacher Attendance", style = MaterialTheme.typography.titleMedium)
         if (uiState.teacherAttendanceRecords.isEmpty()) {
             Text("No teacher attendance data found.", style = MaterialTheme.typography.bodyMedium)
@@ -177,7 +177,7 @@ fun CoordinatorAttendanceTab(uiState: CoordinatorUiState, viewModel: Coordinator
 }
 
 @Composable
-private fun SummaryCard(
+private fun RowScope.SummaryCard(
     title: String,
     value: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
