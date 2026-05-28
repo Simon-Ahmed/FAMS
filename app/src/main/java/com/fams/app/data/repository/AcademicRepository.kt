@@ -121,7 +121,6 @@ class AcademicRepository(
 
     suspend fun getAttendanceForSection(sectionId: String, date: String? = null): Result<List<AttendanceRecord>> {
         return try {
-            // Explicitly type it as Query
             var query: com.google.firebase.firestore.Query = db.collection("attendance")
             if (sectionId != "All") query = query.whereEqualTo("sectionId", sectionId)
             if (!date.isNullOrBlank()) query = query.whereEqualTo("date", date)

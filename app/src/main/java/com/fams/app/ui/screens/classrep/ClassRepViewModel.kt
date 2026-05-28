@@ -6,10 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.fams.app.data.repository.AcademicRepository
 import com.fams.app.data.repository.AuthRepository
 import com.fams.app.domain.model.*
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -22,7 +27,7 @@ data class ClassRepUiState(
     val notifications: List<AppNotification> = emptyList(),
     val chatThreads: List<ChatThread> = emptyList(),
     val messages: List<ChatMessage> = emptyList(),
-    // Student features (rep is also a student)
+    val availableUsers: List<User> = emptyList(),
     val materials: List<Material> = emptyList(),
     val assignments: List<Assignment> = emptyList(),
     val mySubmissions: Map<String, Submission> = emptyMap(),
@@ -86,7 +91,7 @@ class ClassRepViewModel(
     }
 
     fun markTeacherAttendance(teacherId: String, teacherName: String, subjectId: String,
-        subjectName: String, status: AttendanceStatus) {
+                              subjectName: String, status: AttendanceStatus) {
         viewModelScope.launch {
             val user = _state.value.currentUser ?: return@launch
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -161,6 +166,49 @@ class ClassRepViewModel(
             val user = _state.value.currentUser ?: return@launch
             val notifs = repo.getNotifications(user.uid).getOrElse { emptyList() }
             _state.value = _state.value.copy(notifications = notifs)
+        }
+    }
+
+    fun postAnnouncement(announcement: Announcement) {
+        viewModelScope.launch {
+            try {
+                Firebase.firestore.collection("announcements")
+                    .add(announcement)
+                    .await()
+                _state.update { it.copy(successMessage = "Announcement posted successfully!") }
+            } catch (e: Exception) {
+                _state.update { it.copy(errorMessage = e.message) }
+            }
+        }
+    }
+
+    fun replyToAnnouncement(announcementId: String, reply: AnnouncementReply) {
+        viewModelScope.launch {
+            try {
+                Firebase.firestore.collection("announcements")
+                    .document(announcementId)
+                    .update("replies", FieldValue.arrayUnion(reply))
+                    .await()
+                _state.update { it.copy(successMessage = "Reply added!") }
+            } catch (e: Exception) {
+                _state.update { it.copy(errorMessage = e.message) }
+            }
+        }
+    }
+
+    fun loadAvailableUsers() {
+        viewModelScope.launch {
+            // Class reps can chat with: teachers, coordinator
+            val db = com.fams.app.di.FirebaseModule.firestore
+            val snap = db.collection("users").get().await()
+            val me = _state.value.currentUser?.uid ?: ""
+            val users = snap.documents.mapNotNull { doc ->
+                val role = doc.getString("role") ?: ""
+                if (role in listOf("teacher", "coordinator") && doc.id != me) {
+                    com.fams.app.data.repository.UserRepository().mapDocToUser(doc.id, doc.data)
+                } else null
+            }.sortedBy { it.fullName }
+            _state.value = _state.value.copy(availableUsers = users)
         }
     }
 

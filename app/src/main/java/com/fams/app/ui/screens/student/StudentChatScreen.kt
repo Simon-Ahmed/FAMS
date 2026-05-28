@@ -1,7 +1,5 @@
 package com.fams.app.ui.screens.student
 
-
-
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -10,11 +8,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
 import com.fams.app.domain.model.ChatMessage
 import com.fams.app.domain.model.ChatThread
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,6 +23,7 @@ fun StudentChatScreen(state: StudentUiState, viewModel: StudentViewModel) {
     var selectedThread by remember { mutableStateOf<ChatThread?>(null) }
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
 
     LaunchedEffect(state.messages.size) {
         if (state.messages.isNotEmpty()) listState.animateScrollToItem(state.messages.size - 1)
@@ -31,7 +33,7 @@ fun StudentChatScreen(state: StudentUiState, viewModel: StudentViewModel) {
         Column(modifier = Modifier.fillMaxSize()) {
             Text("Messages", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
             if (state.chatThreads.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No conversations yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
@@ -44,15 +46,20 @@ fun StudentChatScreen(state: StudentUiState, viewModel: StudentViewModel) {
                             val otherId = thread.participantIds.firstOrNull { it != me } ?: ""
                             viewModel.loadMessages(otherId)
                         }) {
-                            Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.AccountCircle, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
                                     Column {
                                         Text(otherName, style = MaterialTheme.typography.titleSmall)
                                         Text(thread.lastMessage, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                                     }
                                 }
-                                if (thread.lastMessageAt > 0) Text(remember { androidx.compose.ui.text.intl.Locale.current.toString() })
+                                if (thread.lastMessageAt > 0) {
+                                    Text(
+                                        text = timeFormat.format(Date(thread.lastMessageAt)),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             }
                         }
                     }
@@ -66,7 +73,7 @@ fun StudentChatScreen(state: StudentUiState, viewModel: StudentViewModel) {
         val otherName = thread.participantNames[otherId] ?: "Unknown"
 
         Column(modifier = Modifier.fillMaxSize()) {
-            Row(modifier = Modifier.padding(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { selectedThread = null }) { Icon(Icons.Default.ArrowBack, null) }
                 Text(otherName, style = MaterialTheme.typography.titleMedium)
             }
@@ -78,13 +85,13 @@ fun StudentChatScreen(state: StudentUiState, viewModel: StudentViewModel) {
                         Card(colors = CardDefaults.cardColors(containerColor = if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)) {
                             Column(modifier = Modifier.padding(12.dp).widthIn(max = 260.dp)) {
                                 Text(msg.message, color = if (isMe) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(java.text.SimpleDateFormat("HH:mm").format(java.util.Date(msg.timestamp)), style = MaterialTheme.typography.labelSmall, color = if (isMe) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                                Text(timeFormat.format(Date(msg.timestamp)), style = MaterialTheme.typography.labelSmall, color = if (isMe) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                             }
                         }
                     }
                 }
             }
-            Row(modifier = Modifier.padding(8.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Row(modifier = Modifier.padding(8.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(value = messageText, onValueChange = { messageText = it }, modifier = Modifier.weight(1f), placeholder = { Text("Type a message...") }, maxLines = 3)
                 IconButton(onClick = {
                     if (messageText.isNotBlank()) {

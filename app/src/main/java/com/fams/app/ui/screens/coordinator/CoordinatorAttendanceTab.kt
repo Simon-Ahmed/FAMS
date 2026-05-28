@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.fams.app.domain.model.AttendanceRecord
 import com.fams.app.domain.model.AttendanceStatus
 import com.fams.app.domain.model.TeacherAttendanceRecord
+import androidx.compose.foundation.layout.RowScope
 
 @Composable
 fun CoordinatorAttendanceTab(uiState: CoordinatorUiState, viewModel: CoordinatorViewModel) {
@@ -80,7 +81,8 @@ fun CoordinatorAttendanceTab(uiState: CoordinatorUiState, viewModel: Coordinator
                             }
                         }
                     }
- OutlinedTextField(
+
+                    OutlinedTextField(
                         value = uiState.attendanceDate,
                         onValueChange = viewModel::updateAttendanceDate,
                         label = { Text("Date") },
@@ -164,7 +166,8 @@ fun CoordinatorAttendanceTab(uiState: CoordinatorUiState, viewModel: Coordinator
                 AttendanceRecordRow(record)
             }
         }
- Spacer(modifier = Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
         Text("Teacher Attendance", style = MaterialTheme.typography.titleMedium)
         if (uiState.teacherAttendanceRecords.isEmpty()) {
             Text("No teacher attendance data found.", style = MaterialTheme.typography.bodyMedium)

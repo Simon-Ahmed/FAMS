@@ -3,6 +3,7 @@ package com.fams.app.ui.screens.teacher
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -310,45 +311,118 @@ fun QuizzesTab(state: TeacherUiState, viewModel: TeacherViewModel, sectionId: St
     var selectedQuiz by remember { mutableStateOf<Quiz?>(null) }
     val quizzes = state.quizzes.filter { it.sectionId == sectionId }
 
+    if (showCreate) {
+        val subjects = state.schedule
+            .filter { it.sectionId == sectionId }
+            .map { it.subjectId to it.subjectName }
+            .distinct()
+        CreateQuizScreen(
+            subjects = subjects,
+            sectionId = sectionId,
+            teacherId = state.currentUser?.uid ?: "",
+            onDismiss = { showCreate = false },
+            onConfirm = { quiz ->
+                viewModel.createQuiz(quiz)
+                showCreate = false
+            }
+        )
+        return
+    }
+
     if (selectedQuiz == null) {
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 item { Text("Quizzes (${quizzes.size})", style = MaterialTheme.typography.titleMedium) }
-                items(quizzes) { quiz ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(quiz.title, style = MaterialTheme.typography.titleMedium)
-                                Text("${quiz.questions.size} questions • ${quiz.subjectName}",
-                                    style = MaterialTheme.typography.bodySmall,
+                if (quizzes.isEmpty()) {
+                    item {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.Quiz, null, modifier = Modifier.size(40.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.height(8.dp))
+                                Text("No quizzes yet. Tap + to create one.",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Switch(checked = quiz.isAvailable,
-                                onCheckedChange = { viewModel.setQuizAvailability(quiz.id, it) })
-                            IconButton(onClick = { selectedQuiz = quiz; viewModel.loadQuizSessions(quiz.id) }) {
-                                Icon(Icons.Default.Leaderboard, null)
+                        }
+                    }
+                }
+                items(quizzes) { quiz ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(quiz.title, style = MaterialTheme.typography.titleMedium)
+                                    Text("${quiz.questions.size} questions • ${quiz.subjectName}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        if (quiz.timerMode == TimerMode.TOTAL)
+                                            "Total: ${quiz.totalTimeSeconds / 60} min"
+                                        else "${quiz.perQuestionSeconds}s per question",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Row(verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(if (quiz.isAvailable) "Live" else "Hidden",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (quiz.isAvailable) MaterialTheme.colorScheme.primary
+                                                    else MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Switch(checked = quiz.isAvailable,
+                                            onCheckedChange = { viewModel.setQuizAvailability(quiz.id, it) })
+                                    }
+                                    TextButton(onClick = {
+                                        selectedQuiz = quiz
+                                        viewModel.loadQuizSessions(quiz.id)
+                                    }) { Text("Results") }
+                                }
                             }
                         }
                     }
                 }
             }
             FloatingActionButton(onClick = { showCreate = true },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, null) }
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
+                Icon(Icons.Default.Add, null)
+            }
         }
     } else {
+        // Results / leaderboard view
         Column(modifier = Modifier.fillMaxSize()) {
             Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { selectedQuiz = null }) { Icon(Icons.Default.ArrowBack, null) }
-                Text("${selectedQuiz!!.title} — Results", style = MaterialTheme.typography.titleMedium)
+                Column {
+                    Text("${selectedQuiz!!.title} — Results", style = MaterialTheme.typography.titleMedium)
+                    Text("${state.quizSessions.size} submissions",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.quizSessions.sortedByDescending { it.score }) { session ->
+                if (state.quizSessions.isEmpty()) {
+                    item { Text("No submissions yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
+                itemsIndexed(state.quizSessions.sortedByDescending { it.score }) { index, session ->
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Row(modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(session.studentName, style = MaterialTheme.typography.bodyMedium)
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Text("#${index + 1}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = when (index) {
+                                        0 -> androidx.compose.ui.graphics.Color(0xFFFFD700)
+                                        1 -> androidx.compose.ui.graphics.Color(0xFFC0C0C0)
+                                        2 -> androidx.compose.ui.graphics.Color(0xFFCD7F32)
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    })
+                                Text(session.studentName, style = MaterialTheme.typography.bodyMedium)
+                            }
                             Text("${session.score.toInt()} / ${session.maxScore.toInt()}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.primary)
@@ -358,39 +432,6 @@ fun QuizzesTab(state: TeacherUiState, viewModel: TeacherViewModel, sectionId: St
             }
         }
     }
-
-    if (showCreate) {
-        val subjects = state.schedule.filter { it.sectionId == sectionId }.map { it.subjectId to it.subjectName }.distinct()
-        CreateQuizDialog(subjects = subjects, onDismiss = { showCreate = false },
-            onConfirm = { quiz -> viewModel.createQuiz(quiz.copy(sectionId = sectionId, teacherId = state.currentUser?.uid ?: "")); showCreate = false })
-    }
-}
-
-@Composable
-fun CreateQuizDialog(subjects: List<Pair<String,String>>, onDismiss: () -> Unit, onConfirm: (Quiz) -> Unit) {
-    var title by remember { mutableStateOf("") }
-    var sel by remember { mutableStateOf(subjects.firstOrNull()) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Create Quiz") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = title, onValueChange = { title = it },
-                    label = { Text("Quiz Title") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                subjects.forEach { (id, name) ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = sel?.first == id, onClick = { sel = id to name })
-                        Text(name)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                val s = sel ?: return@Button
-                if (title.isNotBlank()) onConfirm(Quiz(title = title, subjectId = s.first, subjectName = s.second))
-            }) { Text("Create") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
 }
 
 // ── Grades ────────────────────────────────────────────────────────────────────

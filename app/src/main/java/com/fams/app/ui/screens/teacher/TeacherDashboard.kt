@@ -37,6 +37,7 @@ fun TeacherDashboard(
         "Home" to Icons.Default.Home,
         "Schedule" to Icons.Default.CalendarMonth,
         "Classes" to Icons.Default.School,
+        "Announce" to Icons.Default.Campaign,
         "Chat" to Icons.Default.Chat,
         "Profile" to Icons.Default.Person
     )
@@ -84,8 +85,33 @@ fun TeacherDashboard(
                 0 -> TeacherHomeScreen(state, viewModel, onSignOut)
                 1 -> TeacherScheduleScreen(state, viewModel)
                 2 -> TeacherClassesScreen(state, viewModel)
-                3 -> TeacherChatScreen(state, viewModel)
-                4 -> TeacherProfileScreen(state, onSignOut, onThemeToggle, isDarkTheme)
+                3 -> com.fams.app.ui.screens.shared.AnnouncementsScreen(
+                    announcements = state.announcements,
+                    currentUserId = state.currentUser?.uid ?: "",
+                    currentUserName = state.currentUser?.fullName ?: "",
+                    canPost = true,
+                    targetRole = "student",
+                    onPost = { title, body ->
+                        viewModel.postAnnouncement(
+                            com.fams.app.domain.model.Announcement(
+                                title = title, body = body,
+                                authorId = state.currentUser?.uid ?: "",
+                                authorName = state.currentUser?.fullName ?: "",
+                                targetRole = "student"
+                            )
+                        )
+                    },
+                    onReply = { annId, msg ->
+                        viewModel.replyToAnnouncement(annId,
+                            com.fams.app.domain.model.AnnouncementReply(
+                                authorId = state.currentUser?.uid ?: "",
+                                authorName = state.currentUser?.fullName ?: "",
+                                message = msg
+                            ))
+                    }
+                )
+                4 -> TeacherChatScreen(state, viewModel)
+                5 -> TeacherProfileScreen(state, onSignOut, onThemeToggle, isDarkTheme)
             }
         }
     }

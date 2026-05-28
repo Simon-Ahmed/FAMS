@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -29,6 +30,7 @@ data class TeacherUiState(
     val chatThreads: List<ChatThread> = emptyList(),
     val messages: List<ChatMessage> = emptyList(),
     val sectionStudents: List<User> = emptyList(),
+    val availableUsers: List<User> = emptyList(),  // users this teacher can chat with
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null,
@@ -240,6 +242,33 @@ class TeacherViewModel(
             val user = _state.value.currentUser ?: return@launch
             val notifs = repo.getNotifications(user.uid).getOrElse { emptyList() }
             _state.value = _state.value.copy(notifications = notifs)
+        }
+    }
+
+    fun replyToAnnouncement(announcementId: String, reply: AnnouncementReply) {
+        viewModelScope.launch {
+            repo.replyToAnnouncement(announcementId, reply).fold(
+                onSuccess = {
+                    val user = _state.value.currentUser ?: return@fold
+                    loadAll(user)
+                },
+                onFailure = { _state.value = _state.value.copy(errorMessage = it.message) }
+            )
+        }
+    }
+
+    fun loadAvailableUsers() {
+        viewModelScope.launch {
+            val db = com.fams.app.di.FirebaseModule.firestore
+            val snap = db.collection("users").get().await()
+            val me = _state.value.currentUser?.uid ?: ""
+            val users = snap.documents.mapNotNull { doc ->
+                val role = doc.getString("role") ?: ""
+                if (role in listOf("teacher", "class_rep", "coordinator") && doc.id != me) {
+                    com.fams.app.data.repository.UserRepository().mapDocToUser(doc.id, doc.data)
+                } else null
+            }.sortedBy { it.fullName }
+            _state.value = _state.value.copy(availableUsers = users)
         }
     }
 
