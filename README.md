@@ -1,29 +1,29 @@
-# FAMS
-A Kotlin and Firebase-based mobile academic management system for freshman students, teachers, class representatives, and coordinators with smart scheduling, attendance tracking, assignments, quizzes, grading, and communication features.
+# 🎓 FAMS (Freshman Academic Management System)
 
+**FAMS** is a robust, role-based mobile academic management ecosystem designed to streamline university life for freshmen. Built with **Kotlin**, **Jetpack Compose**, and **Firebase**, it provides a real-time platform for coordination, learning, and communication.
 
+## 🚀 Key Features
+*   **Smart Scheduling:** Constraint-based engine that generates conflict-free timetables.
+*   **Real-time Interaction:** Instant chat and push notifications via Firestore and FCM.
+*   **Academic Lifecycle:** End-to-end management of attendance, assignments, and auto-graded quizzes.
+*   **Resource Repository:** Centralized cloud storage for lecture notes and academic materials.
+*   **Role-Based Dashboards:** Specialized interfaces for Coordinators, Teachers, Students, and Class Reps.
 
+## 🏗️ Technical Architecture
+*   **MVVM Pattern:** Strict separation of UI and business logic for maintainability.
+*   **Why NoSQL (Firestore)?** We chose Firestore over traditional SQL to leverage live data synchronization and seamless offline persistence, ensuring students stay updated even with spotty connectivity.
+*   **Firebase Storage:** Large binary files (PDFs, media) are stored in object storage to keep the database lightweight and high-performing.
 
-Freshman Academic Management System is a role-based mobile application developed using Kotlin and Firebase to simplify freshman academic coordination in universities. The system allows coordinators to generate and manage schedules, teachers to handle attendance, materials, assignments, quizzes, and grades, while students and class representatives can access schedules, learning resources, attendance records, notifications, and academic communication in real time.
+## 🛠️ Tech Stack
+*   **Language:** Kotlin
+*   **UI Framework:** Jetpack Compose (Modern Declarative UI)
+*   **Backend:** Firebase (Auth, Firestore, Storage, Messaging)
+*   **Architecture:** MVVM + Clean Architecture Principles
 
-The application includes:
-
-Automated timetable generation
-Student and teacher attendance tracking
-Assignment and quiz management
-Learning material sharing
-Grade management and complaints
-Real-time notifications and communication
-Role-based access for coordinators, teachers, students, and class representatives
-
-Technologies used:
-
-Kotlin
-Firebase Authentication
-Cloud Firestore
-Firebase Storage
-Firebase Cloud Messaging (FCM)
-MVVM Architecture
-Material Design UI
-
-The project is designed to improve freshman academic coordination, reduce scheduling conflicts, and create a centralized digital learning and management platform for universities.
+## 👥 Contributors
+1. Simon Ahmed
+2. Sosina Amare
+3. Robel Bahiru
+4. Ephrem Fasil
+5. Selman Ebrahim
+6. Znabu Tafese
